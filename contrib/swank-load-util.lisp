@@ -7,7 +7,8 @@
                 #:apply-macro-expander)
   (:export #:system-directory
            #:system-pathname
-           #:make-extra-dependency-list))
+           #:make-extra-dependency-list
+           #:make-extra-dependency-list-by-file))
 
 (in-package #:swank-load-util)
 
@@ -49,32 +50,24 @@
                                         :truename uiop:*resolve-symlinks*)))
               (when (uiop:file-pathname-p f) f))))))))
 
-(defun make-extra-dependency-list (existing-systems added-system)
+(defslimefun make-extra-dependency-list (existing-systems added-system &optional eval-defpackage)
   (let* ((new-dependency-list (system-dependency-list added-system))
          (existing-systems (mapcar #'asdf/system:coerce-name existing-systems)))
-    (loop for system in new-dependency-list
-          unless (member system existing-systems :test #'string=)
-          collect (cons system (uiop:unix-namestring (system-pathname system))))))
+    (loop
+      for system in new-dependency-list
+      for pathname = (system-pathname system)
+      unless (member system existing-systems :test #'string=)
+      collect (prog1 (cons system (uiop:unix-namestring pathname))
+                (when eval-defpackage
+                  (eval
+                   (or (asdf/package-inferred-system::file-defpackage-form pathname)
+                       (error "DEFPACKAGE form not found in ~W" pathname))))))))
 
-(defun system-dependency-list* (system-designator)
-  (let ((list (system-dependency-list system-designator)))
-    (loop for system-name in list
-          collect (cons system-name
-                        (uiop:unix-namestring (system-pathname system-name))))))
-
-(defun merge-system-dependency-list (list1 list2)
-  (append (loop for a in list1
-                unless (member a list2 :test #'string=)
-                collect a)
-          list2))
-
-;; (defun pathname-to-system-name (pathname)
-;;   (let* ((root-string (canonize-pathstring *system-root-directory*))
-;;          (target-string (canonize-pathstring pathname))
-;;          (pos (mismatch target-string root-string)))
-;;     (assert (= pos (length root-string)))
-;;     (concatenate 'string
-;;                  "/"
-;;                  (string-trim '(#\/) (subseq target-string pos)))))
+(defslimefun make-extra-dependency-list-by-file (existing-systems added-pathname &optional eval-defpackage)
+  (let ((system-name
+          (asdf/system:coerce-name
+           (second (or (asdf/package-inferred-system::file-defpackage-form added-pathname)
+                       (error "DEFPACKAGE form not found in ~W" added-pathname))))))
+    (cons system-name (make-extra-dependency-list existing-systems system-name eval-defpackage))))
 
 (provide :swank-load-util)

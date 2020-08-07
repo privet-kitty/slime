@@ -1,7 +1,8 @@
 (require 'slime)
 
 (define-slime-contrib slime-load-util
-  "Contrib expanding source-transform."
+  "Contrib inserting source files with resolving
+dependencies (based on package-inferred-system)"
   (:swank-dependencies swank-load-util))
 
 (defun slime-load-util-coerce-name (name)
@@ -42,44 +43,57 @@
           ,added-system)
       cont)))
 
-(defun slime-load-util-get-extra-dependency-list (added-system)
+(defun slime-load-util-get-extra-dependency-list (added-filename)
   (let ((existing-packages
          (delete-if (lambda (name)
                       (member name slime-load-util-excluded-names))
                     (mapcar #'slime-load-util-coerce-name
                             (slime-load-util-collect-packages)))))
-    (slime-eval `(swank-load-util:make-extra-dependency-list
+    (slime-eval `(swank-load-util:make-extra-dependency-list-by-file
                   ',existing-packages
-                  ,added-system))))
+                  ,added-filename
+                  t))))
 
 (defun slime-load-util-make-use-package-line (system-name)
-  (format "(use-package :%s)\n" system-name))
+  (format "(eval-when (:compile-toplevel :load-toplevel :execute)
+  (use-package :%s :cl-user))
+" system-name))
 
-(defun slime-load-util-load-system (added-system &optional insert-use-package)
-  (let ((pos (point))
-        (deps (slime-load-util-get-extra-dependency-list added-system)))
-    (save-excursion
-      (cl-labels
-          ((%move ()
-                  (or (search-backward slime-load-util-use-package-line nil t)
-                      (search-forward slime-load-util-use-package-line)))
-           (%insert-file
-            (filename)
-            (message "Inserted: %s" filename)
-            (let ((file-contents (get-string-from-file filename)))
-              (insert file-contents)
-              (newline)
-              (incf pos (+ (length file-contents) 1)))))
-        (%move)
-        (beginning-of-line)
-        (cl-loop for (system-name . path) in deps
-                 do (%insert-file path))
-        (%move)
-        (forward-line)
-        (when insert-use-package
-          (let ((line (slime-load-util-make-use-package-line added-system)))
-            (insert line)
-            (incf pos (length line)))
+(defun slime-load-util-load-file (added-filename &optional insert-use-package)
+  (let ((pos (point)))
+    (destructuring-bind (added-system &rest deps)
+        (slime-load-util-get-extra-dependency-list added-filename)
+      (save-excursion
+        (cl-labels
+            ((%move ()
+                    (or (search-backward slime-load-util-use-package-line nil t)
+                        (search-forward slime-load-util-use-package-line)))
+             (%insert-file (filename)
+                           (message "Inserted: %s" filename)
+                           (let ((file-contents (get-string-from-file filename)))
+                             (insert file-contents)
+                             (newline)
+                             (incf pos (+ (length file-contents) 1)))))
+          (%move)
+          (beginning-of-line)
+          (message "%s" deps)
+          (cl-loop for (system-name . path) in deps
+                   do (%insert-file path))
+          (%move)
+          (forward-line)
+          (when insert-use-package
+            (let ((line (slime-load-util-make-use-package-line added-system)))
+              (insert line)
+              (incf pos (length line))))
           (goto-char pos))))))
+
+(defvar slime-load-util-base-directory "~/common-lisp/code/")
+(defun slime-load-util-load-file-interactive (filename &optional arg)
+  (interactive (list (read-file-name "Insert file: " slime-load-util-base-directory)
+                     current-prefix-arg))
+  (unless (file-readable-p filename)
+    (error "%s is not readable" filename))
+  (let ((create-lockfiles nil))
+    (slime-load-util-load-file filename (if (eql 0 arg) nil t))))
 
 (provide 'slime-load-util)

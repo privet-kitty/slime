@@ -9,7 +9,7 @@
   (interactive "P")
   (slime-eval-macroexpand
    (if repeatedly
-       'swank-source-transform-expand-1 ; FIXME: no repeated expansion
+       'swank-source-transform:swank-source-transform-expand-1 ; FIXME: no repeated expansion
      'swank-source-transform:swank-source-transform-expand-1)))
 
 (defun slime-source-transform-expand-1-inplace (&optional repeatedly)

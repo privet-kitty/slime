@@ -858,7 +858,7 @@ if the file doesn't exist; otherwise the first line of the file."
   (without-slime-interrupts
     (handler-bind ((error #'signal-swank-error))
       (handler-case (read-message stream *swank-io-package*)
-        (swank-reader-error (c) 
+        (swank-reader-error (c)
           `(:reader-error ,(swank-reader-error.packet c)
                           ,(swank-reader-error.cause c)))))))
 

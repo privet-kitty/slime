@@ -1,4 +1,4 @@
-(defpackage #:swank-source-transform
+(defpackage :swank-source-transform
   (:use #:cl #:swank)
   (:import-from #:swank/backend
                 #:definterface)
@@ -8,7 +8,7 @@
   (:export #:swank-source-transform-expand-1
            #:source-transform-expand-1))
 
-(in-package #:swank-source-transform)
+(in-package :swank-source-transform)
 
 (definterface swank/backend::source-transform-expand-1 (form &optional env)
   "Call the source-transform for form.
