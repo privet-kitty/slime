@@ -903,6 +903,7 @@ For example, the function `case' has an indent property
                   (setq calculated (list indent containing-form-start)))))
 
             (cond ((and (or (eq (char-after (1- containing-sexp)) ?\')
+                            (eq (char-after (1+ containing-sexp)) ?\")
                             (and (not lisp-backquote-indentation)
                                  (eq (char-after (1- containing-sexp)) ?\`)))
                         (not (eq (char-after (- containing-sexp 2)) ?\#)))
