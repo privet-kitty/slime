@@ -1529,12 +1529,14 @@ expansion will be added to the REPL's history.)"
     ;; that keep the markers. --mkoeppe
     (pop-to-buffer buffer)))
 
+(defvar slime-call-defun-symbols)
+
 (defun slime-call-defun ()
   "Insert a call to the toplevel form defined around point into the REPL."
   (interactive)
   (cl-labels ((insert-call
                (name &key (function t)
-                     defclass)
+                     prefix)
                (let* ((setf (and function
                                  (consp name)
                                  (= (length name) 2)
@@ -1557,8 +1559,8 @@ expansion will be added to the REPL's history.)"
                            " "))
                  (when setf
                    (insert "setf ("))
-                 (if defclass
-                     (insert "make-instance '"))
+                 (if prefix
+                     (insert prefix))
                  (insert call)
                  (cond (setf
                         (insert " ")
@@ -1580,9 +1582,12 @@ expansion will be added to the REPL's history.)"
           (((:defparameter :defvar :defconstant) symbol)
            (insert-call symbol :function nil))
           (((:defclass) symbol)
-           (insert-call symbol :defclass t))
+           (insert-call symbol :prefix "make-instance '"))
           (t
-           (error "Not in a function definition")))))))
+           (let ((pair (assoc (first toplevel) slime-call-defun-symbols)))
+             (if pair
+                 (insert-call (second toplevel) :prefix (cdr pair))
+               (error "Not in a function definition")))))))))
 
 (defun slime-repl-copy-down-to-repl (slimefun &rest args)
   (slime-eval-async `(swank-repl:listener-save-value ',slimefun ,@args)

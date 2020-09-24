@@ -152,6 +152,7 @@ For other contexts we return the symbol at point."
                 (slime-parse-context symbol))
               symbol)))))
 
+(defvar slime-user-expressions)
 (defun slime-parse-context (name)
   (save-excursion
     (cond ((slime-in-expression-p '(defun *))          `(:defun ,name))
@@ -204,7 +205,12 @@ For other contexts we return the symbol at point."
                              (car name)
                            name)))
           (t
-           name))))
+           (let ((expr (cl-loop for expr in slime-user-expressions
+                                when (slime-in-expression-p expr)
+                                do (return expr))))
+             (if expr
+                 `(,(intern (format ":%s" (car expr))) ,name)
+               name))))))
 
 
 (defun slime-in-expression-p (pattern)
