@@ -1531,9 +1531,9 @@ expansion will be added to the REPL's history.)"
 
 (defvar slime-call-defun-symbols)
 
-(defun slime-call-defun ()
+(defun slime-call-defun (arg)
   "Insert a call to the toplevel form defined around point into the REPL."
-  (interactive)
+  (interactive "*p")
   (cl-labels ((insert-call
                (name &key (function t)
                      prefix)
@@ -1583,6 +1583,12 @@ expansion will be added to the REPL's history.)"
            (insert-call symbol :function nil))
           (((:defclass) symbol)
            (insert-call symbol :prefix "make-instance '"))
+          (((:defpackage :uiop:define-package) symbol)
+           (message (format "%d" arg))
+           (insert-call symbol :prefix
+                        (cond ((minusp arg) "unuse-package '")
+                              ((> arg 1) "asdf:load-system '")
+                              (t "use-package '"))))
           (t
            (let ((pair (assoc (first toplevel) slime-call-defun-symbols)))
              (if pair
