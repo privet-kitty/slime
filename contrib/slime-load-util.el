@@ -15,6 +15,9 @@ dependencies (based on package-inferred-system)"
 (defvar slime-load-util-package-regexp
   (concat "^(\\(cl:\\|common-lisp:\\)?in-package\\>[ \t']*"
           "\\([^)]+\\)[ \t]*)"))
+(defvar slime-load-util-use-package-regexp
+  (concat "^[ \t]*(\\(cl:\\|common-lisp:\\)?use-package\\>[ \t']*"
+          "\\([^) \t]+\\)[ \t]*[^) \t]*)"))
 
 (defun slime-load-util-collect-packages ()
   (let ((case-fold-search t)
@@ -22,6 +25,16 @@ dependencies (based on package-inferred-system)"
     (save-excursion
       (or (search-backward slime-load-util-beginning-line nil t)
           (search-forward slime-load-util-beginning-line))
+      (cl-loop for pos = (re-search-forward regexp nil t)
+               while pos
+               collect (match-string-no-properties 2)))))
+
+(defun slime-load-util-collect-used-packages ()
+  (let ((case-fold-search t)
+        (regexp slime-load-util-use-package-regexp))
+    (save-excursion
+      (or (search-backward slime-load-util-use-package-line nil t)
+          (search-forward slime-load-util-use-package-line))
       (cl-loop for pos = (re-search-forward regexp nil t)
                while pos
                collect (match-string-no-properties 2)))))
@@ -81,7 +94,10 @@ dependencies (based on package-inferred-system)"
                    do (%insert-file path))
           (%move)
           (forward-line)
-          (when insert-use-package
+          (when (and insert-use-package
+                     (let ((used-systems (mapcar #'slime-load-util-coerce-name
+                                                 (slime-load-util-collect-used-packages))))
+                       (not (member added-system used-systems))))
             (let ((line (slime-load-util-make-use-package-line added-system)))
               (insert line)
               (incf pos (length line))))
