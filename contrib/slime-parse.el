@@ -205,9 +205,7 @@ For other contexts we return the symbol at point."
                              (car name)
                            name)))
           (t
-           (let ((expr (cl-loop for expr in slime-user-expressions
-                                when (slime-in-expression-p expr)
-                                do (return expr))))
+           (let ((expr (cl-find-if #'slime-in-expression-p slime-user-expressions)))
              (if expr
                  `(,(intern (format ":%s" (car expr))) ,name)
                name))))))

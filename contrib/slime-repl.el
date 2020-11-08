@@ -1586,13 +1586,13 @@ expansion will be added to the REPL's history.)"
           (((:defpackage :uiop:define-package) symbol)
            (message (format "%d" arg))
            (insert-call symbol :prefix
-                        (cond ((minusp arg) "unuse-package '")
+                        (cond ((< arg 0) "unuse-package '")
                               ((> arg 1) "asdf:load-system '")
                               (t "use-package '"))))
           (t
-           (let ((pair (assoc (first toplevel) slime-call-defun-symbols)))
+           (let ((pair (assoc (cl-first toplevel) slime-call-defun-symbols)))
              (if pair
-                 (insert-call (second toplevel) :prefix (cdr pair))
+                 (insert-call (cl-second toplevel) :prefix (cdr pair))
                (error "Not in a function definition")))))))))
 
 (defun slime-repl-copy-down-to-repl (slimefun &rest args)
