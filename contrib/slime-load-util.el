@@ -112,7 +112,9 @@ dependencies (based on package-inferred-system)"
 
 (defvar slime-load-util-base-directory "~/common-lisp/code/")
 (defun slime-load-util-load-file-interactive (filename &optional arg)
-  (interactive (list (read-file-name "Insert file: " slime-load-util-base-directory)
+  (interactive (list (read-file-name "Insert file: "
+                                     slime-load-util-base-directory
+                                     nil t)
                      current-prefix-arg))
   (unless (file-readable-p filename)
     (error "%s is not readable" filename))
