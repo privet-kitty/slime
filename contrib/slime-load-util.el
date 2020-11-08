@@ -6,9 +6,9 @@ dependencies (based on package-inferred-system)"
   (:swank-dependencies swank-load-util))
 
 (defun slime-load-util-coerce-name (name)
-  (let ((start (or (position-if (lambda (c) (not (member c '(?# ?:)))) name)
+  (let ((start (or (cl-position-if (lambda (c) (not (member c '(?# ?:)))) name)
                    (length name))))
-    (downcase (subseq name start))))
+    (downcase (cl-subseq name start))))
 
 (defvar slime-load-util-beginning-line ";; BEGIN_INSERTED_CONTENTS")
 (defvar slime-load-util-use-package-line ";; BEGIN_USE_PACKAGE")
@@ -46,10 +46,10 @@ dependencies (based on package-inferred-system)"
 (defvar slime-load-util-excluded-names '("cl-user" "cl"))
 (defun slime-load-util-call-with-extra-dependency-list (added-system cont)
   (let ((existing-packages
-         (delete-if (lambda (name)
-                      (member name slime-load-util-excluded-names))
-                    (mapcar #'slime-load-util-coerce-name
-                            (slime-load-util-collect-packages)))))
+         (cl-delete-if (lambda (name)
+                         (member name slime-load-util-excluded-names))
+                       (mapcar #'slime-load-util-coerce-name
+                               (slime-load-util-collect-packages)))))
     (slime-eval-async
         `(swank-load-util:make-extra-dependency-list
           ',existing-packages
@@ -58,10 +58,10 @@ dependencies (based on package-inferred-system)"
 
 (defun slime-load-util-get-extra-dependency-list (added-filename)
   (let ((existing-packages
-         (delete-if (lambda (name)
-                      (member name slime-load-util-excluded-names))
-                    (mapcar #'slime-load-util-coerce-name
-                            (slime-load-util-collect-packages)))))
+         (cl-delete-if (lambda (name)
+                         (member name slime-load-util-excluded-names))
+                       (mapcar #'slime-load-util-coerce-name
+                               (slime-load-util-collect-packages)))))
     (slime-eval `(swank-load-util:make-extra-dependency-list-by-file
                   ',existing-packages
                   ,added-filename
@@ -74,7 +74,7 @@ dependencies (based on package-inferred-system)"
 
 (defun slime-load-util-load-file (added-filename &optional insert-use-package eval)
   (let ((pos (point)))
-    (destructuring-bind (added-system &rest deps)
+    (cl-destructuring-bind (added-system &rest deps)
         (slime-load-util-get-extra-dependency-list added-filename)
       (save-excursion
         (cl-labels
@@ -86,7 +86,7 @@ dependencies (based on package-inferred-system)"
                            (let ((file-contents (get-string-from-file filename)))
                              (insert file-contents)
                              (newline)
-                             (incf pos (+ (length file-contents) 1)))))
+                             (cl-incf pos (+ (length file-contents) 1)))))
           (%move)
           (beginning-of-line)
           (message "%s" deps)
@@ -100,7 +100,7 @@ dependencies (based on package-inferred-system)"
                        (not (member added-system used-systems))))
             (let ((line (slime-load-util-make-use-package-line added-system)))
               (insert line)
-              (incf pos (length line))))
+              (cl-incf pos (length line))))
           (goto-char pos)
           ;; (when eval
           ;;   (let ((system-symbol (make-symbol (format ":%s" added-system))))
