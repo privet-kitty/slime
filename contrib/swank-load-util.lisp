@@ -7,6 +7,7 @@
                 #:apply-macro-expander)
   (:export #:system-directory
            #:system-pathname
+           #:system-filename
            #:make-extra-dependency-list
            #:make-extra-dependency-list-by-file))
 
@@ -33,7 +34,7 @@
             (dfs dep)))))
     res))
 
-(defun system-pathname (system-designator)
+(defslimefun system-pathname (system-designator)
   (let* ((system-name (asdf/system:coerce-name system-designator))
          (primary (asdf:primary-system-name system-name)))
     (unless (equal primary system-name)
@@ -49,6 +50,10 @@
                    (f (uiop:probe-file* (uiop:subpathname dir sub :type file-type)
                                         :truename uiop:*resolve-symlinks*)))
               (when (uiop:file-pathname-p f) f))))))))
+
+(defslimefun system-filename (system-designator)
+  (let ((pathname (system-pathname system-designator)))
+    (and pathname (namestring pathname))))
 
 (defslimefun make-extra-dependency-list (existing-systems added-system &optional eval-defpackage)
   (let* ((new-dependency-list (system-dependency-list added-system))

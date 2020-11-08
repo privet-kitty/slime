@@ -72,7 +72,7 @@ dependencies (based on package-inferred-system)"
   (use-package :%s :cl-user))
 " system-name))
 
-(defun slime-load-util-load-file (added-filename &optional insert-use-package)
+(defun slime-load-util-load-file (added-filename &optional insert-use-package eval)
   (let ((pos (point)))
     (destructuring-bind (added-system &rest deps)
         (slime-load-util-get-extra-dependency-list added-filename)
@@ -101,7 +101,14 @@ dependencies (based on package-inferred-system)"
             (let ((line (slime-load-util-make-use-package-line added-system)))
               (insert line)
               (incf pos (length line))))
-          (goto-char pos))))))
+          (goto-char pos)
+          ;; (when eval
+          ;;   (let ((system-symbol (make-symbol (format ":%s" added-system))))
+          ;;     (slime-eval `(asdf:load-system ,system-symbol))
+          ;;     (message "Loaded: %s" added-system)
+          ;;     (when insert-use-package
+          ;;       (slime-eval `(cl:use-package ,system-symbol :cl-user)))))
+          )))))
 
 (defvar slime-load-util-base-directory "~/common-lisp/code/")
 (defun slime-load-util-load-file-interactive (filename &optional arg)
@@ -109,7 +116,16 @@ dependencies (based on package-inferred-system)"
                      current-prefix-arg))
   (unless (file-readable-p filename)
     (error "%s is not readable" filename))
-  (let ((create-lockfiles nil))
-    (slime-load-util-load-file filename (if (eql 0 arg) nil t))))
+  (let ((create-lockfiles nil)
+        (arg (or arg 1)))
+    (slime-load-util-load-file filename
+                               (if (< arg 0) nil t)
+                               (if (<= arg 0) nil t))))
+
+(defun slime-load-util-load-system (system-name &optional insert-use-package eval)
+  (let ((filename (slime-eval `(swank-load-util:system-filename ,system-name))))
+    (if filename
+        (slime-load-util-load-file filename insert-use-package eval)
+      (error "System %s not found" system-name))))
 
 (provide 'slime-load-util)
