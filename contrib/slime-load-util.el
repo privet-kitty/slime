@@ -72,6 +72,13 @@ dependencies (based on package-inferred-system)"
   (use-package :%s :cl-user))
 " system-name))
 
+;; TODO: there will be a better way than copying the file contents
+(defun slime-get-string-from-file (filepath)
+  "Return FILEPATH's file content."
+  (with-temp-buffer
+    (insert-file-contents filepath)
+    (buffer-string)))
+
 (defun slime-load-util-load-file (added-filename &optional insert-use-package eval)
   (let ((pos (point)))
     (cl-destructuring-bind (added-system &rest deps)
@@ -83,7 +90,7 @@ dependencies (based on package-inferred-system)"
                         (search-forward slime-load-util-use-package-line)))
              (%insert-file (filename)
                            (message "Inserted: %s" filename)
-                           (let ((file-contents (get-string-from-file filename)))
+                           (let ((file-contents (slime-get-string-from-file filename)))
                              (insert file-contents)
                              (newline)
                              (cl-incf pos (+ (length file-contents) 1)))))
